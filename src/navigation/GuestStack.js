@@ -13,7 +13,7 @@ const GuestStack = () => {
             <Stack.Screen name="LoginPage" component={LoginPage} />
             <Stack.Screen name="SignupPage" component={SignupPage} />
             <Stack.Screen name="HomePage" component={HomePage} />
-            <Stack.Screen name="NewsDetailPage" component={NewsDetailPage} />
+            <Stack.Screen name="NewsDetailPage" component={NewsDetailPage} options={{ headerShown: true, title: "Haber Detayı" }} />
         </Stack.Navigator>
     );
 };
