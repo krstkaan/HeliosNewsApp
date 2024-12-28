@@ -37,7 +37,7 @@ const CustomUserBottomBar = () => {
     return (
         <View style={styles.container}>
             <BarItem
-                itemText="Ana Sayfa"
+                itemText="Haberler"
                 itemLink="HomePage"
                 itemIcon={faHome}
                 iconSize={20}
