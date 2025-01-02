@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, FlatList, Image, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, FlatList, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import axios from 'axios';
 import { NEWS_API_KEY } from '@env';
 import { useNavigation } from '@react-navigation/native';
@@ -7,50 +7,38 @@ import { useNavigation } from '@react-navigation/native';
 const HomePage = () => {
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [page, setPage] = useState(1);
-  const pageSize = 10; // İstediğiniz sayfa boyutunu ayarlayın
+  const [selectedCategory, setSelectedCategory] = useState('technology'); // Varsayılan kategori
+  const categories = [
+    { id: 'technology', name: 'Teknoloji' },
+    { id: 'sports', name: 'Spor' },
+    { id: 'business', name: 'İş Dünyası' },
+    { id: 'health', name: 'Sağlık' },
+    { id: 'entertainment', name: 'Eğlence' },
+  ];
 
-  useEffect(() => {
-    fetchNews();
-  }, []);
+  const navigation = useNavigation();
 
   const fetchNews = async () => {
-    if (loadingMore) return; // Eğer zaten yükleniyorsa yeni bir istek yapma
-    setLoadingMore(true); // Yükleme başladığında loadingMore'u true yap
-
+    setLoading(true);
     try {
-      const response = await axios.get(
-        'https://newsapi.org/v2/everything',
-        {
-          params: {
-            q: 'technology',
-            sortBy: 'publishedAt',
-            apiKey: NEWS_API_KEY,
-            page: page,
-            pageSize: pageSize,
-          },
+      const response = await axios.get('https://newsapi.org/v2/top-headlines', {
+        params: {
+          category: selectedCategory,
+          apiKey: NEWS_API_KEY,
+          country: 'us',
         },
-      );
-
-      // Yeni verileri mevcut haberlere ekle veya ilk veri yükleniyorsa doğrudan ayarla
-      setNews(prevNews => page === 1 ? response.data.articles : [...prevNews, ...response.data.articles]);
-
+      });
+      setNews(response.data.articles || []);
     } catch (error) {
       console.error(error);
     } finally {
       setLoading(false);
-      setLoadingMore(false); // İstek tamamlandığında loadingMore'u false yap
     }
   };
 
-
-  const handleLoadMore = () => {
-    setPage(prevPage => prevPage + 1);
+  useEffect(() => {
     fetchNews();
-  };
-
-  const navigation = useNavigation();
+  }, [selectedCategory]);
 
   const renderNewsItem = ({ item }) => {
     const date = new Date(item.publishedAt);
@@ -63,6 +51,7 @@ const HomePage = () => {
       hour: '2-digit',
       minute: '2-digit',
     });
+
     return (
       <TouchableOpacity onPress={() => navigation.navigate('NewsDetailPage', { item })}>
         <View style={styles.card}>
@@ -71,21 +60,40 @@ const HomePage = () => {
           <Text style={styles.description}>{item.description || 'Belirtilmemiş'}</Text>
           <View style={styles.infoContainer}>
             <Text style={styles.source}>{item.source.name || 'Belirtilmemiş'}</Text>
-            <Text style={styles.date}>{formattedDate || 'Belirtilmemiş'} {formattedTime || ''}</Text>
-            <Text style={styles.date}>{item.author || 'Belirtilmemiş'}</Text>
+            <Text style={styles.date}>{formattedDate} {formattedTime}</Text>
           </View>
         </View>
-
       </TouchableOpacity>
-    )
+    );
   };
 
-  const renderFooter = () => {
-    return loadingMore ? <ActivityIndicator size="large" color="#0000ff" /> : null;
-  }
+  const renderCategories = () => (
+    <View style={styles.categoryContainer}>
+      {categories.map((category) => (
+        <TouchableOpacity
+          key={category.id}
+          style={[
+            styles.categoryButton,
+            selectedCategory === category.id && styles.selectedCategoryButton,
+          ]}
+          onPress={() => setSelectedCategory(category.id)}
+        >
+          <Text
+            style={[
+              styles.categoryText,
+              selectedCategory === category.id && styles.selectedCategoryText,
+            ]}
+          >
+            {category.name}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
 
   return (
     <View style={styles.container}>
+      {renderCategories()}
       {loading ? (
         <ActivityIndicator size="large" color="#0000ff" />
       ) : (
@@ -93,22 +101,38 @@ const HomePage = () => {
           data={news}
           keyExtractor={(item, index) => index.toString()}
           renderItem={renderNewsItem}
-          onEndReached={handleLoadMore}
-          onEndReachedThreshold={0.5}
-          ListFooterComponent={renderFooter}
         />
       )}
     </View>
   );
 };
 
-export default HomePage;
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
     padding: 10,
+  },
+  categoryContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 10,
+    marginTop: 25,
+  },
+  categoryButton: {
+    padding: 10,
+    backgroundColor: '#ddd',
+    borderRadius: 20,
+  },
+  selectedCategoryButton: {
+    backgroundColor: '#007BFF',
+  },
+  categoryText: {
+    fontSize: 14,
+    color: '#333',
+  },
+  selectedCategoryText: {
+    color: '#fff',
   },
   card: {
     backgroundColor: '#fff',
@@ -150,3 +174,5 @@ const styles = StyleSheet.create({
     color: '#888',
   },
 });
+
+export default HomePage;
